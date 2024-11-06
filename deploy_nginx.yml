@@ -1,0 +1,64 @@
+---
+- name: Deploy Nginx on worker nodes
+  hosts: workers
+  become: yes
+
+  tasks:
+    - name: Install Nginx on RedHat-based systems
+      yum:
+        name: nginx
+        state: present
+      when: ansible_os_family == "RedHat"
+
+    - name: Install Nginx on Debian-based systems
+      apt:
+        name: nginx
+        state: present
+        update_cache: yes
+      when: ansible_os_family == "Debian"
+
+    - name: Start and enable Nginx service
+      service:
+        name: nginx
+        state: started
+        enabled: yes
+
+    - name: Deploy custom index.html
+      copy:
+        src: files/index.html
+        dest: /usr/share/nginx/html/index.html
+        owner: nginx
+        group: nginx
+        mode: '0644'
+
+- name: Configure Nginx LoadBalancer Service on Master
+  hosts: master
+  become: yes
+
+  tasks:
+    - name: Create Nginx LoadBalancer service YAML for MetalLB
+      copy:
+        dest: /root/nginx-service.yaml
+        content: |
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: nginx-service
+            namespace: default
+          spec:
+            selector:
+              app: nginx
+            type: LoadBalancer
+            ports:
+              - protocol: TCP
+                port: 80
+                targetPort: 80
+
+    - name: Apply Nginx LoadBalancer Service
+      command: kubectl apply -f /root/nginx-service.yaml
+      register: lb_output
+
+    - name: Show LoadBalancer service output
+      debug:
+        var: lb_output
+
