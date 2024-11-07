@@ -15,7 +15,7 @@
             name: nginx-deployment
             namespace: project
           spec:
-            replicas: 2  # Nginx Pod의 복제본 수
+            replicas: 1  # Nginx Pod의 복제본 수
             selector:
               matchLabels:
                 app: nginx
