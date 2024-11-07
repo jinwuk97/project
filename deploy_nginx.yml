@@ -65,7 +65,7 @@
             name: nginx-deployment
             namespace: project
           spec:
-            replicas: 3
+            replicas: 1
             selector:
               matchLabels:
                 app: nginx
