@@ -27,8 +27,8 @@
       copy:
         src: files/index.html
         dest: /usr/share/nginx/html/index.html
-        owner: nginx
-        group: nginx
+        owner: root
+        group: root
         mode: '0644'
 
 - name: Configure Nginx LoadBalancer Service on Master
