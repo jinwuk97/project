@@ -1,63 +1,13 @@
-- name: Deploy Nginx on worker nodes
-  hosts: workers
-  become: yes
-
-  tasks:
-    - name: Install Nginx on RedHat-based systems
-      yum:
-        name: nginx
-        state: present
-      when: ansible_os_family == "RedHat"
-
-    - name: Install Nginx on Debian-based systems
-      apt:
-        name: nginx
-        state: present
-        update_cache: yes
-      when: ansible_os_family == "Debian"
-
-    - name: Start and enable Nginx service
-      service:
-        name: nginx
-        state: started
-        enabled: yes
-
+# 마스터 노드에서 Nginx 배포 및 LoadBalancer 서비스를 구성하는 플레이북
 - name: Configure Nginx Deployment and LoadBalancer Service on Master
-  hosts: master
-  become: yes
+  hosts: master    # 'master' 그룹에 속한 호스트들을 대상으로 함
+  become: yes      # 관리자 권한으로 실행
 
   tasks:
-    - name: Create ConfigMap for custom index.html
-      copy:
-        dest: /root/nginx-index-configmap.yaml
-        content: |
-          apiVersion: v1
-          kind: ConfigMap
-          metadata:
-            name: nginx-index-config
-            namespace: project
-          data:
-            index.html: |
-              <html>
-              <head>
-                <title>Project Success</title>
-              </head>
-              <body>
-                <h1 style="color: purple;">Project Success</h1>
-              </body>
-              </html>
-
-    - name: Apply ConfigMap
-      command: kubectl apply -f /root/nginx-index-configmap.yaml -n project
-      register: configmap_output
-
-    - name: Show ConfigMap output
-      debug:
-        var: configmap_output.stdout_lines
-
+    # Nginx 배포를 위한 Deployment YAML 파일 생성
     - name: Create Nginx Deployment YAML
       copy:
-        dest: /root/nginx-deployment.yaml
+        dest: /root/nginx-deployment.yaml  # 파일이 저장될 경로
         content: |
           apiVersion: apps/v1
           kind: Deployment
@@ -65,7 +15,7 @@
             name: nginx-deployment
             namespace: project
           spec:
-            replicas: 2
+            replicas: 2  # Nginx Pod의 복제본 수
             selector:
               matchLabels:
                 app: nginx
@@ -76,29 +26,24 @@
               spec:
                 containers:
                 - name: nginx
-                  image: jiruk/project:latest  # Docker Hub 이미지 경로로 변경
+                  image: jiruk/project:latest  # 사용할 Docker 이미지
                   ports:
-                  - containerPort: 80
-                  volumeMounts:
-                  - name: index-html
-                    mountPath: /usr/share/nginx/html/index.html
-                    subPath: index.html
-                volumes:
-                - name: index-html
-                  configMap:
-                    name: nginx-index-config
+                  - containerPort: 80  # 컨테이너 내부 포트
 
+    # Nginx Deployment을 클러스터에 적용
     - name: Apply Nginx Deployment
       command: kubectl apply -f /root/nginx-deployment.yaml -n project
-      register: deploy_output
+      register: deploy_output  # 명령 실행 결과를 변수에 저장
 
+    # Deployment 적용 결과 출력
     - name: Show Deployment output
       debug:
-        var: deploy_output.stdout_lines
+        var: deploy_output.stdout_lines  # 저장된 결과 출력
 
+    # MetalLB를 위한 Nginx LoadBalancer 서비스 YAML 파일 생성
     - name: Create Nginx LoadBalancer service YAML for MetalLB
       copy:
-        dest: /root/nginx-service.yaml
+        dest: /root/nginx-service.yaml  # 파일이 저장될 경로
         content: |
           apiVersion: v1
           kind: Service
@@ -108,24 +53,27 @@
           spec:
             selector:
               app: nginx
-            type: LoadBalancer
+            type: LoadBalancer  # 서비스 타입을 LoadBalancer로 설정
             ports:
               - protocol: TCP
-                port: 80
-                targetPort: 80
+                port: 80          # 외부에 노출할 포트
+                targetPort: 80    # Pod 내 컨테이너 포트
 
+    # LoadBalancer 서비스를 클러스터에 적용
     - name: Apply Nginx LoadBalancer Service
       command: kubectl apply -f /root/nginx-service.yaml -n project
-      register: lb_output
+      register: lb_output  # 명령 실행 결과를 변수에 저장
 
+    # LoadBalancer 서비스 적용 결과 출력
     - name: Show LoadBalancer service output
       debug:
-        var: lb_output.stdout_lines
+        var: lb_output.stdout_lines  # 저장된 결과 출력
 
+    # LoadBalancer가 준비될 때까지 대기
     - name: Wait for LoadBalancer to be ready
       command: kubectl get svc nginx-service -n project
-      register: svc_check
-      retries: 5
-      delay: 10
-      until: "svc_check.stdout.find('EXTERNAL-IP') != -1"
-      ignore_errors: yes
+      register: svc_check  # 명령 실행 결과를 변수에 저장
+      retries: 5           # 최대 재시도 횟수
+      delay: 10            # 재시도 간 대기 시간 (초)
+      until: "svc_check.stdout.find('EXTERNAL-IP') != -1"  # EXTERNAL-IP가 할당될 때까지 반복
+      ignore_errors: yes   # 오류가 발생해도 계속 진행
