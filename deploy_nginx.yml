@@ -25,7 +25,7 @@
 
     - name: Deploy custom index.html
       copy:
-        src: index.html
+        src: files/index.html
         dest: /usr/share/nginx/html/index.html
         owner: nginx
         group: nginx
@@ -44,7 +44,7 @@
           kind: Service
           metadata:
             name: nginx-service
-            namespace: default
+            namespace: jinuk  # 네임스페이스를 jinuk으로 설정
           spec:
             selector:
               app: nginx
@@ -61,4 +61,3 @@
     - name: Show LoadBalancer service output
       debug:
         var: lb_output
-
