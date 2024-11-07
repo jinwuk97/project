@@ -44,7 +44,7 @@
           kind: Service
           metadata:
             name: nginx-service
-            namespace: jinuk  # 네임스페이스를 jinuk으로 설정
+            namespace: project 
           spec:
             selector:
               app: nginx
