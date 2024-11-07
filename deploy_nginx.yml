@@ -25,7 +25,7 @@
 
     - name: Deploy custom index.html
       copy:
-        src: files/index.html
+        src: index.html
         dest: /usr/share/nginx/html/index.html
         owner: nginx
         group: nginx
