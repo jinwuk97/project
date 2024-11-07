@@ -31,11 +31,44 @@
         group: root
         mode: '0644'
 
-- name: Configure Nginx LoadBalancer Service on Master
+- name: Configure Nginx Deployment and LoadBalancer Service on Master
   hosts: master
   become: yes
 
   tasks:
+    - name: Create Nginx Deployment YAML
+      copy:
+        dest: /root/nginx-deployment.yaml
+        content: |
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: nginx-deployment
+            namespace: project
+          spec:
+            replicas: 2
+            selector:
+              matchLabels:
+                app: nginx
+            template:
+              metadata:
+                labels:
+                  app: nginx
+              spec:
+                containers:
+                - name: nginx
+                  image: nginx:latest
+                  ports:
+                  - containerPort: 80
+
+    - name: Apply Nginx Deployment
+      command: kubectl apply -f /root/nginx-deployment.yaml -n project
+      register: deploy_output
+
+    - name: Show Deployment output
+      debug:
+        var: deploy_output.stdout_lines
+
     - name: Create Nginx LoadBalancer service YAML for MetalLB
       copy:
         dest: /root/nginx-service.yaml
@@ -55,9 +88,17 @@
                 targetPort: 80
 
     - name: Apply Nginx LoadBalancer Service
-      command: kubectl apply -f /root/nginx-service.yaml
+      command: kubectl apply -f /root/nginx-service.yaml -n project
       register: lb_output
 
     - name: Show LoadBalancer service output
       debug:
-        var: lb_output
+        var: lb_output.stdout_lines
+
+    - name: Wait for LoadBalancer to be ready
+      command: kubectl get svc nginx-service -n project
+      register: svc_check
+      retries: 5
+      delay: 10
+      until: "svc_check.stdout.find('EXTERNAL-IP') != -1"
+      ignore_errors: yes
