@@ -76,7 +76,7 @@
               spec:
                 containers:
                 - name: nginx
-                  image: nginx:latest
+                  image: jiruk/project:latest  # Docker Hub 이미지 경로로 변경
                   ports:
                   - containerPort: 80
                   volumeMounts:
