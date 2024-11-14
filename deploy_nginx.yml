@@ -29,6 +29,11 @@
                   image: jiruk/project:latest
                   ports:
                   - containerPort: 80
+                  resources:
+                    requests:
+                      cpu: "100m"  # 최소 CPU 요청
+                    limits:
+                      cpu: "500m"  # 최대 CPU 제한
 
     # Nginx Deployment을 클러스터에 적용
     - name: Apply Nginx Deployment
