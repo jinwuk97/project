@@ -106,7 +106,7 @@
                 name: cpu
                 target:
                   type: Utilization
-                  averageUtilization: 50
+                  averageUtilization: 30  # 목표 CPU 사용률을 낮춰서 테스트
 
     # HPA를 클러스터에 적용
     - name: Apply HPA for Nginx Deployment
