@@ -4,7 +4,7 @@
   become: yes
 
   tasks:
-    # Nginx 배포를 위한 Deployment YAML 파일 생성
+    # Nginx 배포를 위한 Deployment YAML 파일 
     - name: Create Nginx Deployment YAML
       copy:
         dest: /root/nginx-deployment.yaml
