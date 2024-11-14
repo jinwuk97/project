@@ -12,5 +12,5 @@ jobs:
     steps:
       - name: Trigger Jenkins Job
         run: |
-          curl -X POST https://88a3-218-146-17-197.ngrok-free.app/job/project/build \
+          curl -X POST https://b22b-218-146-17-197.ngrok-free.app/job/project/build \
           --user user1:11762bf4595997335f38d1ba21c685c586
