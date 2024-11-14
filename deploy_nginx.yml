@@ -15,7 +15,7 @@
             name: nginx-deployment
             namespace: project
           spec:
-            replicas: 2
+            # replicas 설정 제거 (HPA에 의해 자동 조정)
             selector:
               matchLabels:
                 app: nginx
